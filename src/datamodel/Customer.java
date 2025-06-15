@@ -1,165 +1,143 @@
 package datamodel;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
- * Represents a Customer with ID, name and contacts.
- * ID can only be set once.
- * Duplicate contacts are ignored.
- * 
- * @author YOUR_NAME
+ * Represents a customer with ID, name, and contacts.
  */
 public class Customer {
 
-    private long id = -1;
-    private String lastName = "";
-    private String firstName = "";
-    private final List<String> contacts = new ArrayList<>();
+    private Long id;               // now defaults to null
+    private String firstName;
+    private String lastName;
+    private final List<String> contacts;
 
-    /**
-     * Default constructor.
-     */
+    // Constructors
     public Customer() {
+        // id stays null
+        this.firstName = "";
+        this.lastName = "";
+        this.contacts = new ArrayList<>();
     }
 
-    /**
-     * Constructor that takes full name string.
-     * @param name full name string
-     */
     public Customer(String name) {
-        splitName(name);
+        this();
+        setName(name);
     }
 
-    /**
-     * Returns the customer ID.
-     * @return customer ID
-     */
-    public long getId() {
-        return id;
+    public Customer(String firstName, String lastName) {
+        this();
+        setName(firstName, lastName);
     }
 
-    /**
-     * Sets the customer ID, only once.
-     * @param id customer ID
-     * @return this customer object
-     */
-    public Customer setId(long id) {
-        if (this.id == -1) {
+    // ID handling — chainable, only sets when id was previously null
+    public Customer setId(Long id) {
+        if (id == null || id < 0) {
+            throw new IllegalArgumentException("invalid id (negative)");
+        }
+        if (this.id == null) {
             this.id = id;
         }
         return this;
     }
 
-    /**
-     * Returns the last name.
-     * @return last name
-     */
-    public String getLastName() {
-        return lastName;
+    public Long getId() {
+        return id;
     }
 
-    /**
-     * Returns the first name.
-     * @return first name
-     */
-    public String getFirstName() {
-        return firstName;
-    }
-
-    /**
-     * Sets both first and last name.
-     * @param first first name
-     * @param last last name
-     * @return this customer object
-     */
-    public Customer setName(String first, String last) {
-        this.firstName = first != null ? first.trim() : "";
-        this.lastName = last != null ? last.trim() : "";
-        return this;
-    }
-
-    /**
-     * Sets full name, splitting it automatically.
-     * @param name full name string
-     * @return this customer object
-     */
+    // Name handling — both overloads chainable
     public Customer setName(String name) {
         splitName(name);
         return this;
     }
 
-    /**
-     * Returns the number of contacts.
-     * @return number of contacts
-     */
-    public int contactsCount() {
-        return contacts.size();
+    public Customer setName(String firstName, String lastName) {
+        if (lastName == null || lastName.trim().isEmpty()) {
+            throw new IllegalArgumentException("last name empty");
+        }
+        this.firstName = (firstName != null) ? firstName.trim() : "";
+        this.lastName  = lastName.trim();
+        return this;
     }
 
-    /**
-     * Returns the contact list.
-     * @return contacts as Iterable
-     */
-    public Iterable<String> getContacts() {
-        return Collections.unmodifiableList(contacts);
+    public String getFirstName() {
+        return firstName;
     }
 
-    /**
-     * Adds a contact, ignoring duplicates.
-     * @param contact contact string
-     * @return this customer object
-     */
+    public String getLastName() {
+        return lastName;
+    }
+
+    // Contacts — normalize then check length
     public Customer addContact(String contact) {
-        if (contact != null && !contacts.contains(contact)) {
-            contacts.add(contact);
+        if (contact == null) {
+            throw new IllegalArgumentException("contact null");
+        }
+        String original  = contact;
+        String trimmed   = original.trim();
+        // strip quotes, semicolons, commas, then trim again
+        String normalized = trimmed.replaceAll("[\"';,]", "").trim();
+
+        if (normalized.length() < 6) {
+            throw new IllegalArgumentException(
+                "contact less than 6 characters: \"" + original + "\"."
+            );
+        }
+
+        if (!contacts.contains(normalized)) {
+            contacts.add(normalized);
         }
         return this;
     }
 
-    /**
-     * Deletes the contact at index i, if valid.
-     * @param i index of contact
-     */
+    public int contactsCount() {
+        return contacts.size();
+    }
+
+    public Iterable<String> getContacts() {
+        return contacts;
+    }
+
     public void deleteContact(int i) {
         if (i >= 0 && i < contacts.size()) {
             contacts.remove(i);
         }
     }
 
-    /**
-     * Deletes all contacts.
-     */
     public void deleteAllContacts() {
         contacts.clear();
     }
 
-    /**
-     * Splits full name string into first and last name.
-     * @param name full name
-     */
+    // Internal helper
     private void splitName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            this.firstName = "";
-            this.lastName = "";
-            return;
+        if (name == null) {
+            throw new IllegalArgumentException("name null");
+        }
+        name = name.trim();
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("name empty");
         }
 
-        String[] parts;
+        name = name.replace(";", ",");  // normalize
         if (name.contains(",")) {
-            parts = name.split(",", 2);
-            this.lastName = parts[0].trim();
-            this.firstName = parts[1].trim();
+            String[] parts = name.split(",", 2);
+            lastName  = parts[0].trim();
+            firstName = parts[1].trim();
         } else {
-            parts = name.trim().split("\\s+");
+            String[] parts = name.split("\\s+");
             if (parts.length == 1) {
-                this.firstName = parts[0];
-                this.lastName = "";
+                firstName = "";
+                lastName  = parts[0].trim();
             } else {
-                this.lastName = parts[parts.length - 1];
-                this.firstName = String.join(" ", java.util.Arrays.copyOf(parts, parts.length - 1));
+                lastName  = parts[parts.length - 1].trim();
+                firstName = String.join(" ",
+                              Arrays.copyOf(parts, parts.length - 1)
+                            ).trim();
             }
+        }
+
+        if (lastName.isEmpty()) {
+            throw new IllegalArgumentException("last name empty");
         }
     }
 }
