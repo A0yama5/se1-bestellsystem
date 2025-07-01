@@ -7,6 +7,20 @@ import java.util.*;
  */
 public class Customer {
 
+        /**
+     * Daten-Konstruktor, genutzt von DataFactory.
+     * @param id eindeutige Kundennummer
+     * @param lastName Nachname
+     * @param firstName Vorname
+     * @param contacts vorvalidierte Kontakte
+     */
+    public Customer(Long id, String lastName, String firstName, List<String> contacts) {
+        this(firstName, lastName);   // ruft setName()
+        setId(id);
+        contacts.forEach(this::addContact);
+    }
+
+
     private Long id;               // now defaults to null
     private String firstName;
     private String lastName;
